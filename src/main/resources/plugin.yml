@@ -1,0 +1,15 @@
+name: Creativezone
+version: ${project.version}
+main: com.ivan.creativezone.CreativeZone
+api-version: 1.16
+authors: [ ivan ]
+
+commands:
+  CreateZone:
+    description: Create a zone
+    aliases: [czone, addzone]
+    usage: "Usage: /createzone <x> <negative x> <z> <negative z> <zone name>"
+  RemoveZone:
+    description: Remove a zone
+    aliases: [ rzone, rmzone, deletezone, delzone ]
+    usage: "Usage: /removezone <zone name>"
