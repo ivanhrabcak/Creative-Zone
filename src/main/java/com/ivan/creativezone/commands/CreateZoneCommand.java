@@ -18,12 +18,15 @@ public class CreateZoneCommand implements CommandExecutor {
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-        if (!sender.isOp()) {
+        if (!(sender instanceof Player)) {
+            sender.sendMessage("Only players can use this command!");
+            return true;
+        }
+        else if (!sender.isOp()) {
             sender.sendMessage("You do not have permission to use this command!");
             return true;
         }
         else if (args.length != 5) {
-            System.out.println(Arrays.toString(args));
             return false;
         }
 
@@ -41,7 +44,9 @@ public class CreateZoneCommand implements CommandExecutor {
                 }
             }
 
-            manager.addZone(new Zone(x, negativeX, z, negativeZ, name));
+            Player player = (Player) sender;
+
+            manager.addZone(new Zone(x, negativeX, z, negativeZ, name, player.getWorld(), manager.getPlugin()));
             sender.sendMessage("Zone created!");
             return true;
         }

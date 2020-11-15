@@ -1,36 +1,40 @@
 package com.ivan.creativezone.zone;
 
+import com.ivan.creativezone.CreativeZoneManager;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.PlayerInventory;
 
+import java.io.Serializable;
 import java.util.Objects;
 
-public class ZoneInventory {
-    private PlayerInventory inventory;
-    private PlayerInventory creativeInventory;
-    private Player player;
+public class ZoneInventory implements Serializable {
+    private Inventory inventory;
+    private Inventory creativeInventory;
+    private transient Player player;
 
-    public ZoneInventory(PlayerInventory inventory) {
+
+    public ZoneInventory(Inventory inventory) {
+        this.player = player;
         this.inventory = inventory;
-        creativeInventory = (PlayerInventory) Bukkit.createInventory(inventory.getHolder(), inventory.getType());
-        creativeInventory.clear();
+        creativeInventory = Bukkit.createInventory(inventory.getHolder(), inventory.getType());
         player = (Player) inventory.getHolder();
     }
 
-    public PlayerInventory getInventory() {
+    public Inventory getInventory() {
         return inventory;
     }
 
-    public void setInventory(PlayerInventory inventory) {
+    public void setInventory(Inventory inventory) {
         this.inventory = inventory;
     }
 
-    public PlayerInventory getCreativeInventory() {
+    public Inventory getCreativeInventory() {
         return creativeInventory;
     }
 
-    public void setCreativeInventory(PlayerInventory creativeInventory) {
+    public void setCreativeInventory(Inventory creativeInventory) {
         this.creativeInventory = creativeInventory;
     }
 

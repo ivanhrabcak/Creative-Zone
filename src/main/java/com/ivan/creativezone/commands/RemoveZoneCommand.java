@@ -22,7 +22,6 @@ public class RemoveZoneCommand implements CommandExecutor {
             return true;
         }
         else if (args.length != 1) {
-            System.out.println(Arrays.toString(args));
             return false;
         }
 
