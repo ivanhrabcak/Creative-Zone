@@ -5,6 +5,7 @@ import com.ivan.creativezone.zone.ZoneInventory;
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.advancement.Advancement;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
@@ -85,25 +86,14 @@ public class CreativeZoneManager implements Listener {
                 event.setCancelled(true);
                 return;
             }
-            if (event.getTo() != null && z.isInZone(event.getTo())) {
-                event.setCancelled(true);
-                return;
-            }
         }
     }
 
-    @EventHandler
-    public void onInventoryOpen(InventoryOpenEvent event) {
-        if (!(event.getInventory().getHolder() instanceof EnderChest)) {
-            return;
-        }
+    // TODO:
+    // scaffholding
+    // dont forget to remove task after zone removed
+    // beds are broken
 
-        for (Zone z : zones) {
-            if (z.isInZone(event.getPlayer().getLocation())) {
-                event.setCancelled(true);
-            }
-        }
-    }
 
     @EventHandler
     public void onPlayerAdvancementDone(PlayerAdvancementDoneEvent event) {
@@ -127,33 +117,7 @@ public class CreativeZoneManager implements Listener {
 
     @EventHandler
     public void onPlayerTeleport(PlayerTeleportEvent event) {
-        if (event.getCause() != PlayerTeleportEvent.TeleportCause.CHORUS_FRUIT ||
-        event.getCause() != PlayerTeleportEvent.TeleportCause.ENDER_PEARL) {
-            return;
-        }
-        else if (event.getTo() == null) {
-            return;
-        }
-
-        boolean isTargetPositionInZone = false;
-        boolean isFromPositionInZone = false;
-
-        for (Zone z : zones) {
-            if (z.isInZone(event.getTo())) {
-                isTargetPositionInZone = true;
-            }
-            if (z.isInZone(event.getFrom())) {
-                isFromPositionInZone = true;
-            }
-
-            if (isTargetPositionInZone && isFromPositionInZone) {
-                break;
-            }
-        }
-
-        if (isTargetPositionInZone != isFromPositionInZone) {
-            event.setCancelled(true);
-        }
+        onPlayerMove(new PlayerMoveEvent(event.getPlayer(), event.getFrom(), event.getTo()));
     }
 
     @EventHandler
@@ -162,7 +126,9 @@ public class CreativeZoneManager implements Listener {
 
         for (Zone z : zones) {
             for (BlockState state : portalLocations) {
-                if (z.isInZone(state.getLocation())) {
+                System.out.println(z.isInZone(state.getLocation()));
+
+                if (z.isInZone(state.getLocation()) && state.getChunk().getWorld().getName().equals("world")) {
                     event.setCancelled(true);
                     return;
                 }
@@ -192,9 +158,14 @@ public class CreativeZoneManager implements Listener {
             }
         }
 
-        if (playerIsInZone != interactionBlockIsInZone) {
+        if (playerIsInZone && event.getClickedBlock().getType() == Material.ENDER_CHEST
+                && event.getAction() == Action.RIGHT_CLICK_BLOCK) {
             event.setCancelled(true);
         }
+        else if (playerIsInZone != interactionBlockIsInZone) {
+            event.setCancelled(true);
+        }
+
     }
 
     @EventHandler
@@ -287,23 +258,28 @@ public class CreativeZoneManager implements Listener {
 
         Vector blockVector = event.getDirection().getDirection();
 
+        boolean firstBlockIsInZone = false;
+
         for (Zone z : zones) {
-            if (z.isInZone(pistonLocation)) {
-                isPistonInZone = true;
-            }
+            boolean isFirst = true;
             for (Block block : targetBlockLocations) {
                 if (z.isInZone(block.getLocation().add(blockVector))) {
                     isAnyTargetBlockInZone = true;
-                    break;
+                }
+                if (z.isInZone(pistonLocation)) {
+                    isPistonInZone = true;
+                }
+
+                if (z.isInZone(block.getLocation().add(blockVector)) && isFirst) {
+                    isFirst = false;
+                    firstBlockIsInZone = z.isInZone(block.getLocation().add(blockVector));
+                }
+                else if (z.isInZone(block.getLocation().add(blockVector)) != firstBlockIsInZone) {
+                    event.setCancelled(true);
+                    return;
                 }
             }
-
-            if (isPistonInZone && isAnyTargetBlockInZone) {
-                break;
-            }
         }
-
-
         if (isPistonInZone != isAnyTargetBlockInZone) {
             event.setCancelled(true);
         }
@@ -330,19 +306,26 @@ public class CreativeZoneManager implements Listener {
         if (event.getTo() == null) {
             return;
         }
+        if (!event.getTo().getChunk().getWorld().getName().equals("world")) {
+            return;
+        }
+        if (!event.getFrom().getChunk().getWorld().getName().equals("world")) {
+            return;
+        }
 
         for (Zone zone : zones) {
             if (zone.isInZone(event.getTo()) && !zone.isInZone(event.getFrom())) {
                 removeAllPotionEffects(event.getPlayer());
                 event.getPlayer().setGameMode(GameMode.CREATIVE);
                 for (ZoneInventory inventory : inventories) {
-                    if (inventory.getPlayer().getName().equals(event.getPlayer().getName())) {
+                    if (inventory.getPlayerName().equals(event.getPlayer().getName())) {
                         inventory.setInventory(copyInventory(event.getPlayer().getInventory()));
+                        inventory.setXp(event.getPlayer().getLevel());
                         setPlayerInventory(event.getPlayer(), inventory.getCreativeInventory());
                         return;
                     }
                 }
-                ZoneInventory inventory = new ZoneInventory(copyInventory(event.getPlayer().getInventory()));
+                ZoneInventory inventory = new ZoneInventory(copyInventory(event.getPlayer().getInventory()), event.getPlayer().getLevel());
                 inventories.add(inventory);
                 setPlayerInventory(event.getPlayer(), copyInventory(inventory.getCreativeInventory()));
             }
@@ -350,8 +333,9 @@ public class CreativeZoneManager implements Listener {
                 removeAllPotionEffects(event.getPlayer());
                 event.getPlayer().setGameMode(GameMode.SURVIVAL);
                 for (ZoneInventory inventory : inventories) {
-                    if (inventory.getPlayer().getName().equals(event.getPlayer().getName())) {
+                    if (inventory.getPlayerName().equals(event.getPlayer().getName())) {
                         inventory.setCreativeInventory(copyInventory(event.getPlayer().getInventory()));
+                        event.getPlayer().setLevel(inventory.getXp());
                         setPlayerInventory(event.getPlayer(), inventory.getInventory());
                         return;
                     }

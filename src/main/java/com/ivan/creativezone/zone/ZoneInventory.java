@@ -12,14 +12,19 @@ import java.util.Objects;
 public class ZoneInventory implements Serializable {
     private Inventory inventory;
     private Inventory creativeInventory;
-    private transient Player player;
+    private String playerName;
+    private int xp;
 
+    public ZoneInventory(Inventory inventory, Inventory creativeInventory, String playerName, int xp) {
+        this.inventory = inventory;
+        this.creativeInventory = creativeInventory;
+        this.playerName = playerName;
+    }
 
-    public ZoneInventory(Inventory inventory) {
-        this.player = player;
+    public ZoneInventory(Inventory inventory, int xp) {
+        this.playerName = ((Player) inventory.getHolder()).getName();
         this.inventory = inventory;
         creativeInventory = Bukkit.createInventory(inventory.getHolder(), inventory.getType());
-        player = (Player) inventory.getHolder();
     }
 
     public Inventory getInventory() {
@@ -38,11 +43,19 @@ public class ZoneInventory implements Serializable {
         this.creativeInventory = creativeInventory;
     }
 
-    public Player getPlayer() {
-        return player;
+    public String getPlayerName() {
+        return playerName;
     }
 
-    public void setPlayer(Player player) {
-        this.player = player;
+    public void setPlayerName(String playerName) {
+        this.playerName = playerName;
+    }
+
+    public int getXp() {
+        return xp;
+    }
+
+    public void setXp(int xp) {
+        this.xp = xp;
     }
 }
