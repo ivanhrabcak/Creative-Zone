@@ -10,12 +10,14 @@ import org.bukkit.advancement.Advancement;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
 import org.bukkit.block.EnderChest;
+import org.bukkit.block.data.type.Bed;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.*;
 import org.bukkit.event.entity.EntityPickupItemEvent;
 import org.bukkit.event.entity.EntityPortalEvent;
+import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.inventory.InventoryOpenEvent;
 import org.bukkit.event.player.*;
 import org.bukkit.event.world.PortalCreateEvent;
@@ -89,10 +91,25 @@ public class CreativeZoneManager implements Listener {
         }
     }
 
-    // TODO:
-    // scaffholding
-    // dont forget to remove task after zone removed
-    // beds are broken
+
+    @EventHandler
+    public void onPlayerDeath(PlayerDeathEvent event) {
+        if (!event.getKeepInventory()) {
+            for (ZoneInventory inventory : inventories) {
+                if (event.getEntity().getName().equals(inventory.getPlayerName())) {
+                    inventory.setInventory(copyInventory(event.getEntity().getInventory()));
+                }
+            }
+        }
+        if (!event.getKeepLevel()) {
+            for (ZoneInventory inventory : inventories) {
+                if (event.getEntity().getName().equals(inventory.getPlayerName())) {
+                    inventory.setXp(event.getNewLevel());
+                }
+            }
+        }
+
+    }
 
 
     @EventHandler
@@ -126,7 +143,6 @@ public class CreativeZoneManager implements Listener {
 
         for (Zone z : zones) {
             for (BlockState state : portalLocations) {
-                System.out.println(z.isInZone(state.getLocation()));
 
                 if (z.isInZone(state.getLocation()) && state.getChunk().getWorld().getName().equals("world")) {
                     event.setCancelled(true);
@@ -160,6 +176,10 @@ public class CreativeZoneManager implements Listener {
 
         if (playerIsInZone && event.getClickedBlock().getType() == Material.ENDER_CHEST
                 && event.getAction() == Action.RIGHT_CLICK_BLOCK) {
+            event.setCancelled(true);
+        }
+        else if (playerIsInZone && event.getClickedBlock().getBlockData() instanceof Bed &&
+        event.getAction() == Action.RIGHT_CLICK_BLOCK) {
             event.setCancelled(true);
         }
         else if (playerIsInZone != interactionBlockIsInZone) {
@@ -215,6 +235,7 @@ public class CreativeZoneManager implements Listener {
                 break;
             }
         }
+
 
         if (playerIsInZone != entityIsInZone) {
             event.setCancelled(true);
@@ -272,6 +293,7 @@ public class CreativeZoneManager implements Listener {
 
                 if (z.isInZone(block.getLocation().add(blockVector)) && isFirst) {
                     isFirst = false;
+
                     firstBlockIsInZone = z.isInZone(block.getLocation().add(blockVector));
                 }
                 else if (z.isInZone(block.getLocation().add(blockVector)) != firstBlockIsInZone) {
@@ -280,6 +302,7 @@ public class CreativeZoneManager implements Listener {
                 }
             }
         }
+
         if (isPistonInZone != isAnyTargetBlockInZone) {
             event.setCancelled(true);
         }
@@ -349,6 +372,7 @@ public class CreativeZoneManager implements Listener {
     }
 
     public void removeZone(Zone zone) {
+        zone.stopTask();
         zones.remove(zone);
     }
 

@@ -8,6 +8,8 @@ import org.bukkit.command.CommandSender;
 
 import java.util.Arrays;
 
+// set gamemode to everyone in zone
+
 public class RemoveZoneCommand implements CommandExecutor {
     private CreativeZoneManager manager;
 
